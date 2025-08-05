@@ -13,14 +13,14 @@ module Controller(
     // Execute
     output [1:0] E_rs1_data_sel,
     output [1:0] E_rs2_data_sel,
-    output       E_alu_op1_sel,
-    output       E_alu_op2_sel,
-    output       E_jb_op1_sel,
+    output reg   E_alu_op1_sel,
+    output reg   E_alu_op2_sel,
+    output reg   E_jb_op1_sel,
     output [4:0] E_op_out,
     output [2:0] E_f3_out,
     output       E_f7_out,
     // Memory
-    output [3:0] M_dm_w_en,
+    output reg [3:0] M_dm_w_en,
     // Write back
     output       W_wb_en,
     output [4:0] W_rd_index,
@@ -34,12 +34,41 @@ reg [4:0] E_rd, M_rd, W_rd;
 reg [4:0] E_rs1, E_rs2;
 reg       E_f7;
 
-wire is_D_rsl_W_rd_overlap, is_D_use_rs1, is_W_use_rd;
+wire is_D_rsl_W_rd_overlap, is_D_use_rs1;
 wire is_D_rs2_W_rd_overlap, is_D_use_rs2;
 
-assign F_im_w_en = 3'd0;
-// assign 
+wire is_E_rs1_W_rd_overlap, is_E_rs1_M_rd_overlap, is_E_use_rs1;
+wire is_E_rs2_W_rd_overlap, is_E_rs2_M_rd_overlap, is_E_use_rs2;
 
+wire is_M_use_rd;
+wire is_W_use_rd;
+
+assign is_M_use_rd = (M_op == 5'b01000 || M_op == 5'b11000) ? 1'b0 : 1'b1;
+assign is_W_use_rd = (W_op == 5'b01000 || W_op == 5'b11000) ? 1'b0 : 1'b1;
+
+assign F_im_w_en = 4'd0;
+
+assign D_rs1_data_sel        = is_D_rsl_W_rd_overlap ? 1'd1 : 1'd0;
+assign is_D_rs1_W_rd_overlap = is_D_use_rs1 & is_W_use_rd & (D_out[17:13] == W_rd) & W_rd != 0;
+assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
+
+assign D_rs1_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
+assign is_D_rs2_W_rd_overlap = is_D_use_rs2 & is_W_use_rd & (D_out[22:18] == W_rd) & W_rd != 0;
+assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
+
+assign E_op_out = E_op;
+assign E_f3_out = E_f3;
+assign E_f7_out = E_f7;
+
+assign E_rs1_data_sel        = is_E_rs1_M_rd_overlap ? 2'd1 : is_E_rs1_W_rd_overlap ? 2'd0 : 2'd2;
+assign is_E_rs1_W_rd_overlap = is_E_use_rs1 & is_W_use_rd & (E_rs1 == W_rd) & W_rd != 0;
+assign is_E_rs1_M_rd_overlap = is_E_use_rs1 & is_M_use_rd & (E_rs1 == M_rd) & M_rd != 0;
+assign is_E_use_rs1          = (E_op == 5'b01101 || E_op == 5'b00101 || E_op == 5'b11011) ? 1'b0 : 1'b1;
+
+assign E_rs2_data_sel        = is_E_rs2_M_rd_overlap ? 2'd1 : is_E_rs2_W_rd_overlap ? 2'd0 : 2'd2;
+assign is_E_rs2_W_rd_overlap = is_E_use_rs2 & is_W_use_rd & (E_rs2 == W_rd) & W_rd != 0;
+assign is_E_rs2_M_rd_overlap = is_E_use_rs2 & is_M_use_rd & (E_rs2 == M_rd) & M_rd != 0;
+assign is_E_use_rs2          = (E_op == 5'b01100 || E_op == 5'b01000 || E_op == 5'b11000) ? 1'b0 : 1'b1;
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -71,29 +100,71 @@ always @(posedge clk or posedge rst) begin
         W_rd <= M_rd;
     end
 end
+
+always @(*) begin
+    case (E_op) 
+        5'b01100 : begin        // R type
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 0;
+            E_alu_op2_sel <= 0;
+        end
+        5'b00100 : begin        // immediate
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 0;
+            E_alu_op2_sel <= 1;
+        end
+        5'b00000 : begin         // load
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 0;
+            E_alu_op2_sel <= 1;
+        end
+        5'b11001 : begin       // jalr
+            E_jb_op1_sel <= 0;
+            E_alu_op1_sel <= 1;
+            E_alu_op2_sel <= 1'bx; 
+        end
+        5'b01000 : begin       // store
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 0;
+            E_alu_op2_sel <= 1;
+        end
+        5'b11000 : begin      // branch
+            E_jb_op1_sel <= 1'b1;
+            E_alu_op1_sel <= 0;
+            E_alu_op2_sel <= 0;
+        end
+        5'b01101 : begin      // lui
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 1'bx;
+            E_alu_op2_sel <= 1;
+        end
+        5'b00101 : begin      // auipc
+            E_jb_op1_sel <= 1'bx;
+            E_alu_op1_sel <= 1;
+            E_alu_op2_sel <= 1;
+        end
+        5'b11011 : begin      // jal
+            E_jb_op1_sel <= 1'b1;
+            E_alu_op1_sel <= 1;
+            E_alu_op2_sel <= 1'bx; 
+        end
+    endcase
+end
+
+always @(*) begin
+    case (M_op) 
+        5'b01000 : begin
+            case (M_f3)
+                3'b000 : M_dm_w_en <= 4'b0001; // sb
+                3'b001 : M_dm_w_en <= 4'b0011; // sh
+                3'b010 : M_dm_w_en <= 4'b1111; // sw
+            endcase
+        end
+        default : M_dm_w_en <= 4'd0;
+    endcase
+end
 endmodule 
 
-// module Controller(
-//     input [4:0]  opcode,
-//     input [2:0]  func3,
-//     input        func7,
-//     input        b,
-//     output reg       next_pc_sel,
-//     output reg  [3:0] im_w_en,
-//     output reg       wb_en,
-//     output reg       jb_op1_sel,
-//     output reg       alu_op1_sel,
-//     output reg       alu_op2_sel,
-//     output reg       wb_sel,
-//     output reg [3:0] dm_w_en,
-//     output     [4:0] opcode_,
-//     output     [2:0] func3_,
-//     output           func7_
-// );
-
-// assign opcode_ = opcode;
-// assign func3_  = func3;
-// assign func7_  = func7;
 
 // always @(*) begin
 //     case (opcode)
@@ -101,7 +172,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 0;
 //             alu_op2_sel <= 0;
 //             wb_sel <= 0;
@@ -111,7 +182,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 0;
 //             alu_op2_sel <= 1;
 //             wb_sel <= 0;
@@ -121,7 +192,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 0;
 //             alu_op2_sel <= 1;
 //             wb_sel <= 1;
@@ -131,7 +202,7 @@ endmodule
 //             next_pc_sel <= 0;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 0;
+//             E_jb_op1_sel <= 0;
 //             alu_op1_sel <= 1;
 //             alu_op2_sel <= 1'bx; 
 //             wb_sel <= 0;
@@ -141,7 +212,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 0;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 0;
 //             alu_op2_sel <= 1;
 //             wb_sel <= 1'bx;
@@ -155,7 +226,7 @@ endmodule
 //             next_pc_sel <= !b; 
 //             im_w_en <= 0;
 //             wb_en <= 0;
-//             jb_op1_sel <= 1'b1;
+//             E_jb_op1_sel <= 1'b1;
 //             alu_op1_sel <= 0;
 //             alu_op2_sel <= 0;
 //             wb_sel <= 1'bx;
@@ -165,7 +236,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 1'bx;
 //             alu_op2_sel <= 1;
 //             wb_sel <= 0;
@@ -175,7 +246,7 @@ endmodule
 //             next_pc_sel <= 1;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'bx;
+//             E_jb_op1_sel <= 1'bx;
 //             alu_op1_sel <= 1;
 //             alu_op2_sel <= 1;
 //             wb_sel <= 0;
@@ -185,7 +256,7 @@ endmodule
 //             next_pc_sel <= 0;
 //             im_w_en <= 0;
 //             wb_en <= 1;
-//             jb_op1_sel <= 1'b1;
+//             E_jb_op1_sel <= 1'b1;
 //             alu_op1_sel <= 1;
 //             alu_op2_sel <= 1'bx; 
 //             wb_sel <= 0;
