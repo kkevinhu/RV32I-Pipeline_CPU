@@ -45,8 +45,8 @@ wire is_W_use_rd;
 
 wire is_DE_overlap, is_D_rs1_E_rd_overlap, is_D_rs2_E_rd_overlap;
 
-assign stall = (E_op ==  5'b00000) & is_DE_overlap;
-assign is_DE_overlap = (is_D_rs1_E_rd_overlap | is_D_rs2_E_rd_overlap);
+assign stall                 = (E_op ==  5'b00000) & is_DE_overlap;
+assign is_DE_overlap         = (is_D_rs1_E_rd_overlap | is_D_rs2_E_rd_overlap);
 assign is_D_rs1_E_rd_overlap = is_D_use_rs1 & (D_out[17:13] == E_rd) & E_rd != 0;
 assign is_D_rs2_E_rd_overlap = is_D_use_rs2 & (D_out[22:18] == E_rd) & E_rd != 0;
 
