@@ -19,69 +19,128 @@ module Top (
     input rst
 );
 
-// wire func7;
-// wire [2:0] func3;
-// wire [4:0] opcode, rs1_index, rs2_index, rd_index;
+wire       stall;
+wire       next_pc_sel;
+wire [3:0] F_im_w_en;
+wire       D_rs1_data_sel;
+wire       D_rs2_data_sel;
+wire [1:0] E_rs1_data_sel;
+wire [1:0] E_rs2_data_sel;
+wire       E_jb_op1_sel;
+wire       E_alu_op1_sel;
+wire       E_alu_op2_sel;
+wire [4:0] E_op_out;
+wire [2:0] E_f3_out;
+wire       E_f7_out;
+wire [3:0] M_dm_w_en;
+wire       W_wb_en;
+wire [4:0] W_rd_index;
+wire [2:0] W_f3_out;
+wire       W_wb_data_sel;
 
-// wire [31:0] pc_add_four;
-// wire [31:0] write_data, rs1_data, rs2_data, wb_data;
-// wire [31:0] alu_out, alu_op1, alu_op2;
-// wire [31:0] ld_data, ld_data_f;
-// wire [31:0] jb_op1, jb_out;
-// wire [31:0] current_pc, inst, imme;
+wire [31:0] current_pc, D_pc, E_pc;
+wire [31:0] inst, D_inst;
+wire [31:0] rs1_data, rs2_data;
+wire [31:0] D_rs1_data, D_rs2_data, D_ext_out;
+wire [31:0] E_rs1_data, E_rs2_data, E_ext_out;
+wire [31:0] E_newest_rs1, E_newest_rs2;
+wire [31:0] E_alu_op1, E_alu_op2, E_jb_op1;
+wire [31:0] E_alu_out, E_jb_out;
+wire [31:0] M_alu_out;
+wire [31:0] M_rs2_data;
+wire [31:0] M_ld_data;
+wire [31:0] W_alu_out;
+wire [31:0] W_ld_data, W_ld_data_f;
+wire [31:0] W_wb_data;
 
-// wire       wb_en;
-// wire       next_pc_sel;
-// wire       jb_op1_sel;
-// wire       alu_op1_sel;
-// wire       alu_op2_sel;
-// wire       wb_sel;
-// wire [3:0] im_w_en;
-// wire [3:0] dm_w_en;
-// wire [4:0] opcode_;
-// wire [2:0] func3_;
-// wire       func7_;
+wire [23:0] D_out;
+wire [4:0]  D_rs1_index, D_rs2_index;
 
-// Controller controller(
-//     .opcode(opcode), .func3(func3), .func7(func7), .b(alu_out[0]),
-//     .next_pc_sel(next_pc_sel), .im_w_en(im_w_en), .wb_en(wb_en), .jb_op1_sel(jb_op1_sel),
-//     .alu_op1_sel(alu_op1_sel), .alu_op2_sel(alu_op2_sel), .wb_sel(wb_sel),
-//     .dm_w_en(dm_w_en),
-//     .opcode_(opcode_), .func3_(func3_), .func7_(func7_)
-// );
+Controller controller(
+    .clk(clk),
+    .rst(rst),
+    .D_out(D_out),
+    .b(E_alu_out[0]),
+    .stall(stall),
+    .next_pc_sel(next_pc_sel),
+    .F_im_w_en(F_im_w_en),
+    .D_rs1_data_sel(D_rs1_data_sel),
+    .D_rs2_data_sel(D_rs2_data_sel),
+    .E_rs1_data_sel(E_rs1_data_sel),
+    .E_rs2_data_sel(E_rs2_data_sel),
+    .E_alu_op1_sel(E_alu_op1_sel),
+    .E_alu_op2_sel(E_alu_op2_sel),
+    .E_jb_op1_sel(E_jb_op1_sel),
+    .E_op_out(E_op_out),
+    .E_f3_out(E_f3_out),
+    .E_f7_out(E_f7_out),
+    .M_dm_w_en(M_dm_w_en),
+    .W_wb_en(W_wb_en),
+    .W_rd_index(W_rd_index),
+    .W_f3_out(W_f3_out),
+    .W_wb_data_sel(W_wb_data_sel)
+);
 
-// Adder adder(.A(current_pc), .C(pc_add_four));
+Reg_PC reg_pc(.clk(clk), .rst(rst), .branch(next_pc_sel), .stall(stall), .jb_pc(), .current_pc(current_pc));
 
-// Reg_PC reg_pc(.clk(clk), .rst(rst), .branch(next_pc_sel), .jb_pc(jb_out), .current_pc(current_pc));
+SRAM im(.clk(clk), .w_en(4'b0000), .address(current_pc[15:0]), .write_data(), .read_data(inst));
 
-// SRAM im (.clk(clk), .w_en(4'b0000), .address(current_pc[15:0]), .write_data(write_data), .read_data(inst));
+Reg_D reg_D(
+    .clk(clk), .rst(rst), 
+    .stall(stall), .jb(next_pc_sel), 
+    .pc_in(current_pc), .inst_in(inst), 
+    .pc_out(D_pc), .inst_out(D_inst)
+);
 
-// Decoder decoder(
-//     .inst(inst), .dc_out_opcode(opcode), .dc_out_func3(func3), .dc_out_func7(func7), 
-//     .dc_out_rs1_index(rs1_index), .dc_out_rs2_index(rs2_index), .dc_out_rd_index(rd_index)
-// );
+Decoder decoder(.inst(D_inst), .decoder_out(D_out), .dc_out_rs1_index(D_rs1_index), .dc_out_rs2_index(D_rs2_index));
 
-// Imme_Ext imme_ext(.inst(inst), .imme_ext_out(imme));
+Imme_Ext imme_ext(.inst(D_inst), .imme_ext_out(D_ext_out));
 
-// RegFile reg_file(
-//     .clk(clk), .wb_en(wb_en), .wb_data(wb_data), .rd_index(rd_index), .rs1_index(rs1_index), .rs2_index(rs2_index), 
-//     .rs1_data_out(rs1_data), .rs2_data_out(rs2_data)
-// );
+RegFile reg_file(
+    .clk(clk), .wb_en(W_wb_en), .wb_data(W_wb_data), .rd_index(W_rd_index), .rs1_index(D_rs1_index), .rs2_index(D_rs2_index), 
+    .rs1_data_out(rs1_data), .rs2_data_out(rs2_data)
+);
 
-// Mux mux_alu_op1(.sel(alu_op1_sel), .A(rs1_data), .B(current_pc), .out(alu_op1));
+Mux mux_rs1_DorW(.sel(D_rs1_data_sel), .A(rs1_data), .B(W_wb_data), .out(D_rs1_data));
 
-// Mux mux_alu_op2(.sel(alu_op2_sel), .A(rs2_data), .B(imme), .out(alu_op2));
+Mux mux_rs2_DorW(.sel(D_rs2_data_sel), .A(rs2_data), .B(W_wb_data), .out(D_rs2_data));
 
-// ALU alu(.opcode(opcode_), .func3(func3_), .func7(func7_), .operand1(alu_op1), .operand2(alu_op2), .alu_out(alu_out));
+Reg_E reg_E(
+    .clk(clk), .rst(rst), 
+    .stall(stall), .jb(next_pc_sel),
+    .pc_in(D_pc), .rs1_data_in(D_rs1_data), .rs2_data_in(D_rs2_data), .sext_imme_in(D_ext_out),
+    .pc_out(E_pc), .rs1_data_out(E_rs1_data), .rs2_data_out(E_rs2_data), .sext_imme_out(E_ext_out)
+);
 
-// Mux mux_jb_op1(.sel(jb_op1_sel), .A(rs1_data), .B(current_pc), .out(jb_op1));
+Mux3 mux_rs1_newest(.sel(E_rs1_data_sel), .A(W_wb_data), .B(M_alu_out), .C(E_rs1_data), .out(E_newest_rs1));
 
-// JB_Unit jb_unit(.operand1(jb_op1), .operand2(imme), .jb_out(jb_out));
+Mux3 mux_rs2_newest(.sel(E_rs2_data_sel), .A(W_wb_data), .B(M_alu_out), .C(E_rs2_data), .out(E_newest_rs2));
 
-// SRAM dm(.clk(clk), .w_en(dm_w_en), .address(alu_out[15:0]), .write_data(rs2_data), .read_data(ld_data));
+Mux mux_alu_op1(.sel(E_alu_op1_sel), .A(E_newest_rs1), .B(E_pc), .out(E_alu_op1));
 
-// LD_Filter ld_filter(.func3(func3_), .ld_data(ld_data), .ld_data_f(ld_data_f));
+Mux mux_alu_op2(.sel(E_alu_op2_sel), .A(E_newest_rs2), .B(E_ext_out), .out(E_alu_op2));
 
-// Mux mux_wb_data(.sel(wb_sel), .A(alu_out), .B(ld_data_f), .out(wb_data));
+ALU alu(.opcode(E_op_out), .func3(E_f3_out), .func7(E_f7_out), .operand1(E_alu_op1), .operand2(E_alu_op2), .alu_out(E_alu_out));
 
+Mux mux_jb_op1(.sel(E_jb_op1_sel), .A(E_newest_rs1), .B(E_pc), .out(E_jb_op1));
+
+JB_Unit jb_unit(.operand1(E_jb_op1), .operand2(E_ext_out), .jb_out(E_jb_out));
+
+Reg_M reg_M(
+    .clk(clk), .rst(rst),
+    .alu_out_in(E_alu_out), .rs2_data_in(E_newest_rs2),
+    .alu_out_out(M_alu_out), .rs2_data_out(M_rs2_data)
+);
+
+SRAM dm(.clk(clk), .w_en(M_dm_w_en), .address(M_alu_out[15:0]), .write_data(M_rs2_data), .read_data(M_ld_data));
+
+Reg_W reg_W(
+    .clk(clk), .rst(rst),
+    .alu_out_in(M_alu_out), .ld_data_in(M_ld_data),
+    .alu_out_out(W_alu_out), .ld_data_out(W_ld_data)
+);
+
+LD_Filter ld_filter(.func3(W_f3), .ld_data(W_ld_data), .ld_data_f(W_ld_data_f));
+
+Mux mux_wb_data(.sel(W_wb_data_sel), .A(W_alu_out), .B(W_ld_data_f), .out(W_wb_data));
 endmodule
