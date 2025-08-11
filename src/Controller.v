@@ -50,6 +50,8 @@ assign is_DE_overlap         = (is_D_rs1_E_rd_overlap | is_D_rs2_E_rd_overlap);
 assign is_D_rs1_E_rd_overlap = is_D_use_rs1 & (D_out[17:13] == E_rd) & E_rd != 0;
 assign is_D_rs2_E_rd_overlap = is_D_use_rs2 & (D_out[22:18] == E_rd) & E_rd != 0;
 
+assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
+assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
 assign is_M_use_rd = (M_op == 5'b01000 || M_op == 5'b11000) ? 1'b0 : 1'b1;
 assign is_W_use_rd = (W_op == 5'b01000 || W_op == 5'b11000) ? 1'b0 : 1'b1;
 
@@ -57,11 +59,9 @@ assign F_im_w_en = 4'd0;
 
 assign D_rs1_data_sel        = is_D_rs1_W_rd_overlap ? 1'd1 : 1'd0;
 assign is_D_rs1_W_rd_overlap = is_D_use_rs1 & is_W_use_rd & (D_out[17:13] == W_rd) & W_rd != 0;
-assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
 
 assign D_rs2_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
 assign is_D_rs2_W_rd_overlap = is_D_use_rs2 & is_W_use_rd & (D_out[22:18] == W_rd) & W_rd != 0;
-assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
 
 assign E_op_out = E_op;
 assign E_f3_out = E_f3;
@@ -97,8 +97,8 @@ always @(posedge clk or posedge rst) begin
     end
     else begin
         E_op  <= D_out[4:0];
+        E_rd  <= D_out[9:5];
         E_f3  <= D_out[12:10];
-        E_rd  <= D_out[11:7];
         E_rs1 <= D_out[17:13];
         E_rs2 <= D_out[22:18];
         E_f7  <= D_out[23];
@@ -108,6 +108,15 @@ always @(posedge clk or posedge rst) begin
         W_op <= M_op;
         W_f3 <= M_f3;
         W_rd <= M_rd;
+    end
+end
+
+always @(*) begin
+    if (stall) begin
+        E_op  <= 5'b00100;
+        E_rd  <= 5'd0;
+        E_rs1 <= 5'd0;
+        E_rs2 <= 5'd0;
     end
 end
 
