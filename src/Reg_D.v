@@ -19,7 +19,7 @@ always @(posedge clk or posedge rst) begin
             pc_out   <= pc_out;
             inst_out <= inst_out;
         end
-        else if (jb) begin
+        else if (!jb) begin
             pc_out   <= 32'd0;                    // If control hazard, it will execute NOP, so it doesn't matter what pc_out is ???
             inst_out <= 32'h00000013;
         end

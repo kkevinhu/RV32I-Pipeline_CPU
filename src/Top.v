@@ -6,11 +6,12 @@
 `include "./src/JB_Unit.v"
 `include "./src/LD_Filter.v"
 `include "./src/Mux.v"
+`include "./src/Mux3.v"
 `include "./src/Reg_D.v"
 `include "./src/Reg_E.v"
 `include "./src/Reg_M.v"
-`include "./src/Reg_W.v"
 `include "./src/Reg_PC.v"
+`include "./src/Reg_W.v"
 `include "./src/RegFile.v"
 `include "./src/SRAM.v"
 
@@ -81,7 +82,7 @@ Controller controller(
     .W_wb_data_sel(W_wb_data_sel)
 );
 
-Reg_PC reg_pc(.clk(clk), .rst(rst), .branch(next_pc_sel), .stall(stall), .jb_pc(), .current_pc(current_pc));
+Reg_PC reg_pc(.clk(clk), .rst(rst), .branch(next_pc_sel), .stall(stall), .jb_pc(E_jb_out), .current_pc(current_pc));
 
 SRAM im(.clk(clk), .w_en(4'b0000), .address(current_pc[15:0]), .write_data(), .read_data(inst));
 
@@ -140,7 +141,7 @@ Reg_W reg_W(
     .alu_out_out(W_alu_out), .ld_data_out(W_ld_data)
 );
 
-LD_Filter ld_filter(.func3(W_f3), .ld_data(W_ld_data), .ld_data_f(W_ld_data_f));
+LD_Filter ld_filter(.func3(W_f3_out), .ld_data(W_ld_data), .ld_data_f(W_ld_data_f));
 
 Mux mux_wb_data(.sel(W_wb_data_sel), .A(W_alu_out), .B(W_ld_data_f), .out(W_wb_data));
 endmodule

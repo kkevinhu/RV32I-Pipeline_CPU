@@ -34,7 +34,7 @@ reg [4:0] E_rd, M_rd, W_rd;
 reg [4:0] E_rs1, E_rs2;
 reg       E_f7;
 
-wire is_D_rsl_W_rd_overlap, is_D_use_rs1;
+wire is_D_rs1_W_rd_overlap, is_D_use_rs1;
 wire is_D_rs2_W_rd_overlap, is_D_use_rs2;
 
 wire is_E_rs1_W_rd_overlap, is_E_rs1_M_rd_overlap, is_E_use_rs1;
@@ -55,11 +55,11 @@ assign is_W_use_rd = (W_op == 5'b01000 || W_op == 5'b11000) ? 1'b0 : 1'b1;
 
 assign F_im_w_en = 4'd0;
 
-assign D_rs1_data_sel        = is_D_rsl_W_rd_overlap ? 1'd1 : 1'd0;
+assign D_rs1_data_sel        = is_D_rs1_W_rd_overlap ? 1'd1 : 1'd0;
 assign is_D_rs1_W_rd_overlap = is_D_use_rs1 & is_W_use_rd & (D_out[17:13] == W_rd) & W_rd != 0;
 assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
 
-assign D_rs1_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
+assign D_rs2_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
 assign is_D_rs2_W_rd_overlap = is_D_use_rs2 & is_W_use_rd & (D_out[22:18] == W_rd) & W_rd != 0;
 assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
 

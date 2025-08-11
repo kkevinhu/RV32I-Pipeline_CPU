@@ -21,9 +21,9 @@ always @(posedge clk or posedge rst) begin
         sext_imme_out <= 32'd0;
     end
     else begin
-        if (stall || jb) begin
+        if (stall || !jb) begin
             pc_out        <= 32'd0;
-            rs1_data_out  <= 32'd0;;
+            rs1_data_out  <= 32'd0;
             rs2_data_out  <= 32'd0;
             sext_imme_out <= 32'd0;
         end
@@ -31,7 +31,7 @@ always @(posedge clk or posedge rst) begin
             pc_out        <= pc_in;
             rs1_data_out  <= rs1_data_in;
             rs2_data_out  <= rs2_data_in;
-            sext_imme_out <= sext_imme_out;
+            sext_imme_out <= sext_imme_in;
         end
     end
 end
