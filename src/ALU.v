@@ -1,3 +1,5 @@
+`include "./include.v"
+
 module ALU (
     input      [4:0]  opcode,   //inst[6:2]
     input      [2:0]  func3,
@@ -9,45 +11,39 @@ module ALU (
 
 always @(*) begin
     case (opcode)
-        5'b01100, 5'b00100 : begin         // R type & I type(immediate)
+        `R_TYPE, `IMME : 
+        begin
             case (func3)
-                3'b000 : begin
-                    if (opcode == 5'b01100)
+                `ADD_OR_SUB : begin
+                    if (opcode == `R_TYPE)
                         alu_out <= (func7) ? (operand1 - operand2) : (operand1 + operand2);
                     else
                         alu_out <= operand1 + operand2;
                 end
-                3'b001 : alu_out <= operand1 << operand2[4:0]; 
-                3'b010 : alu_out <= $signed(operand1)   < $signed(operand2);
-                3'b011 : alu_out <= $unsigned(operand1) < $unsigned(operand2);
-                3'b100 : alu_out <= operand1 ^ operand2;
-                3'b101 : alu_out <= (func7) ? $signed(($signed(operand1) >>> operand2[4:0])) : (operand1 >> operand2[4:0]);
-                3'b110 : alu_out <= operand1 | operand2;
-                3'b111 : alu_out <= operand1 & operand2;                
+                `SLL        : alu_out <= operand1 << operand2[4:0]; 
+                `SLT        : alu_out <= $signed(operand1)   < $signed(operand2);
+                `SLTU       : alu_out <= $unsigned(operand1) < $unsigned(operand2);
+                `XOR        : alu_out <= operand1 ^ operand2;
+                `SRL_OR_SRA : alu_out <= (func7) ? $signed(($signed(operand1) >>> operand2[4:0])) : (operand1 >> operand2[4:0]);
+                `OR         : alu_out <= operand1 | operand2;
+                `AND        : alu_out <= operand1 & operand2;                
             endcase
         end
-        5'b00000, 5'b01000 : begin        // I type(load) & S type
-            alu_out <= operand1 + operand2;
-        end
-        5'b11001, 5'b11011 : begin        // I type (jalr) & J type (jal)
-            alu_out <= operand1 + 4;
-        end
-        5'b11000 : begin                 // B type
+        `LOAD, `STORE : alu_out <= operand1 + operand2;
+        `JALR, `JAL   : alu_out <= operand1 + 4;
+        `BRANCH       : 
+        begin 
             case (func3)
-                3'b000 : alu_out <= (operand1 == operand2); // beq
-                3'b001 : alu_out <= (operand1 != operand2); // bne
-                3'b100 : alu_out <= ($signed(operand1)   < $signed(operand2));  // blt
-                3'b110 : alu_out <= ($unsigned(operand1) < $unsigned(operand2)); // bltu 
-                3'b101 : alu_out <= ($signed(operand1) >= $signed(operand2)); // bge 
-                3'b111 : alu_out <= ($unsigned(operand1) >= $unsigned(operand2)); // bgeu
+                `BEQ  : alu_out <= (operand1 == operand2);
+                `BNE  : alu_out <= (operand1 != operand2);
+                `BLT  : alu_out <= ($signed(operand1)   < $signed(operand2));
+                `BLTU : alu_out <= ($unsigned(operand1) < $unsigned(operand2)); 
+                `BGE  : alu_out <= ($signed(operand1) >= $signed(operand2)); 
+                `BGEU : alu_out <= ($unsigned(operand1) >= $unsigned(operand2));
             endcase
         end
-        5'b01101 : begin                 // lui
-            alu_out <= operand2;
-        end
-        5'b00101 : begin                // auipc
-            alu_out <= operand1 + operand2;
-        end
+        `LUI   : alu_out <= operand2;
+        `AUIPC : alu_out <= operand1 + operand2;
     endcase
 end
 endmodule
