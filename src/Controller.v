@@ -157,55 +157,55 @@ always @(*) begin
         `R_TYPE : begin 
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 0;
-            E_alu_op2_sel <= 0;
+            E_alu_op1_sel <= 1'b0;
+            E_alu_op2_sel <= 1'b0;
         end
         `IMME   : begin   
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 0;
-            E_alu_op2_sel <= 1;
+            E_alu_op1_sel <= 1'b0;
+            E_alu_op2_sel <= 1'b1;
         end
         `LOAD   : begin  
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 0;
-            E_alu_op2_sel <= 1;
+            E_alu_op1_sel <= 1'b0;
+            E_alu_op2_sel <= 1'b1;
         end
         `JALR   : begin 
             next_pc_sel   <= 1'b0;
-            E_jb_op1_sel  <= 0;
-            E_alu_op1_sel <= 1;
+            E_jb_op1_sel  <= 1'b0;
+            E_alu_op1_sel <= 1'b1;
             E_alu_op2_sel <= 1'bx; 
         end
         `STORE  : begin  
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 0;
-            E_alu_op2_sel <= 1;
+            E_alu_op1_sel <= 1'b0;
+            E_alu_op2_sel <= 1'b1;
         end
         `BRANCH : begin 
             next_pc_sel   <= !b;
             E_jb_op1_sel  <= 1'b1;
-            E_alu_op1_sel <= 0;
-            E_alu_op2_sel <= 0;
+            E_alu_op1_sel <= 1'b0;
+            E_alu_op2_sel <= 1'b0;
         end
         `LUI    : begin 
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
             E_alu_op1_sel <= 1'bx;
-            E_alu_op2_sel <= 1;
+            E_alu_op2_sel <= 1'b1;
         end
         `AUIPC  : begin
             next_pc_sel   <= 1'b1;
             E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1;
-            E_alu_op2_sel <= 1;
+            E_alu_op1_sel <= 1'b1;
+            E_alu_op2_sel <= 1'b1;
         end
         `JAL    : begin 
             next_pc_sel   <= 1'b0;
             E_jb_op1_sel  <= 1'b1;
-            E_alu_op1_sel <= 1;
+            E_alu_op1_sel <= 1'b1;
             E_alu_op2_sel <= 1'bx; 
         end
     endcase
@@ -235,50 +235,41 @@ assign W_f3_out   = W_f3;
 always @(*) begin
     case (W_op)
         `R_TYPE : begin 
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
         `IMME   : begin  
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
         `LOAD   : begin 
-            W_wb_en <= 1;
-            W_wb_data_sel <= 1;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b1;
         end
         `JALR   : begin 
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
         `STORE  : begin 
-            W_wb_en <= 0;
+            W_wb_en <= 1'b0;
             W_wb_data_sel <= 1'bx;
         end
         `BRANCH : begin 
-            W_wb_en <= 0;
+            W_wb_en <= 1'b0;
             W_wb_data_sel <= 1'bx;
         end
         `LUI    : begin 
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
         `AUIPC  : begin 
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
         `JAL    : begin
-            W_wb_en <= 1;
-            W_wb_data_sel <= 0;
+            W_wb_en <= 1'b1;
+            W_wb_data_sel <= 1'b0;
         end
     endcase
 end
-endmodule 
-
-/* opcode
-R : 01100
-I : 00100 00000 11001
-S : 01000 
-B : 11000
-U : 01101 00101
-J : 11011
-*/
+endmodule
