@@ -28,57 +28,14 @@ module Controller(
     output reg   W_wb_data_sel
 );
 
+//------------------------------------------------------------------------------------------------------------------------------
+// RIGSTER
+//------------------------------------------------------------------------------------------------------------------------------
 reg [4:0] E_op, M_op, W_op;
 reg [2:0] E_f3, M_f3, W_f3;
 reg [4:0] E_rd, M_rd, W_rd;
 reg [4:0] E_rs1, E_rs2;
 reg       E_f7;
-
-wire is_D_rs1_W_rd_overlap, is_D_use_rs1;
-wire is_D_rs2_W_rd_overlap, is_D_use_rs2;
-
-wire is_E_rs1_W_rd_overlap, is_E_rs1_M_rd_overlap, is_E_use_rs1;
-wire is_E_rs2_W_rd_overlap, is_E_rs2_M_rd_overlap, is_E_use_rs2;
-
-wire is_M_use_rd;
-wire is_W_use_rd;
-
-wire is_DE_overlap, is_D_rs1_E_rd_overlap, is_D_rs2_E_rd_overlap;
-
-assign stall                 = (E_op ==  5'b00000) & is_DE_overlap;
-assign is_DE_overlap         = (is_D_rs1_E_rd_overlap | is_D_rs2_E_rd_overlap);
-assign is_D_rs1_E_rd_overlap = is_D_use_rs1 & (D_out[17:13] == E_rd) & E_rd != 0;
-assign is_D_rs2_E_rd_overlap = is_D_use_rs2 & (D_out[22:18] == E_rd) & E_rd != 0;
-
-assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
-assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
-assign is_M_use_rd = (M_op == 5'b01000 || M_op == 5'b11000) ? 1'b0 : 1'b1;
-assign is_W_use_rd = (W_op == 5'b01000 || W_op == 5'b11000) ? 1'b0 : 1'b1;
-
-assign F_im_w_en = 4'd0;
-
-assign D_rs1_data_sel        = is_D_rs1_W_rd_overlap ? 1'd1 : 1'd0;
-assign is_D_rs1_W_rd_overlap = is_D_use_rs1 & is_W_use_rd & (D_out[17:13] == W_rd) & W_rd != 0;
-
-assign D_rs2_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
-assign is_D_rs2_W_rd_overlap = is_D_use_rs2 & is_W_use_rd & (D_out[22:18] == W_rd) & W_rd != 0;
-
-assign E_op_out = E_op;
-assign E_f3_out = E_f3;
-assign E_f7_out = E_f7;
-
-assign E_rs1_data_sel        = is_E_rs1_M_rd_overlap ? 2'd1 : is_E_rs1_W_rd_overlap ? 2'd0 : 2'd2;
-assign is_E_rs1_W_rd_overlap = is_E_use_rs1 & is_W_use_rd & (E_rs1 == W_rd) & W_rd != 0;
-assign is_E_rs1_M_rd_overlap = is_E_use_rs1 & is_M_use_rd & (E_rs1 == M_rd) & M_rd != 0;
-assign is_E_use_rs1          = (E_op == 5'b01101 || E_op == 5'b00101 || E_op == 5'b11011) ? 1'b0 : 1'b1;
-
-assign E_rs2_data_sel        = is_E_rs2_M_rd_overlap ? 2'd1 : is_E_rs2_W_rd_overlap ? 2'd0 : 2'd2;
-assign is_E_rs2_W_rd_overlap = is_E_use_rs2 & is_W_use_rd & (E_rs2 == W_rd) & W_rd != 0;
-assign is_E_rs2_M_rd_overlap = is_E_use_rs2 & is_M_use_rd & (E_rs2 == M_rd) & M_rd != 0;
-assign is_E_use_rs2          = (E_op == 5'b01100 || E_op == 5'b01000 || E_op == 5'b11000) ? 1'b0 : 1'b1;
-
-assign W_rd_index = W_rd;
-assign W_f3_out   = W_f3;
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -94,6 +51,30 @@ always @(posedge clk or posedge rst) begin
         W_op <= 5'd0;
         W_f3 <= 3'd0;
         W_rd <= 5'd0;
+    end
+    else if (stall) begin
+        E_op  <= 5'b00100;
+        E_rd  <= 5'd0;
+        E_rs1 <= 5'd0;
+        E_rs2 <= 5'd0;
+        M_op <= E_op;
+        M_f3 <= E_f3;
+        M_rd <= E_rd;
+        W_op <= M_op;
+        W_f3 <= M_f3;
+        W_rd <= M_rd;
+    end
+    else if (E_op == 5'b11001 || E_op == 5'b11011 || (b && E_op == 5'b11000)) begin
+        E_op  <= 5'b00100;
+        E_rd  <= 5'd0;
+        E_rs1 <= 5'd0;
+        E_rs2 <= 5'd0;
+        M_op <= E_op;
+        M_f3 <= E_f3;
+        M_rd <= E_rd;
+        W_op <= M_op;
+        W_f3 <= M_f3;
+        W_rd <= M_rd;
     end
     else begin
         E_op  <= D_out[4:0];
@@ -111,14 +92,62 @@ always @(posedge clk or posedge rst) begin
     end
 end
 
-always @(*) begin
-    if (stall) begin
-        E_op  <= 5'b00100;
-        E_rd  <= 5'd0;
-        E_rs1 <= 5'd0;
-        E_rs2 <= 5'd0;
-    end
-end
+//------------------------------------------------------------------------------------------------------------------------------
+// WIRE
+//------------------------------------------------------------------------------------------------------------------------------
+wire is_D_rs1_W_rd_overlap, is_D_use_rs1;
+wire is_D_rs2_W_rd_overlap, is_D_use_rs2;
+wire is_DE_overlap, is_D_rs1_E_rd_overlap, is_D_rs2_E_rd_overlap;
+
+wire is_E_rs1_W_rd_overlap, is_E_rs1_M_rd_overlap, is_E_use_rs1;
+wire is_E_rs2_W_rd_overlap, is_E_rs2_M_rd_overlap, is_E_use_rs2;
+
+wire is_M_use_rd;
+wire is_W_use_rd;
+
+//------------------------------------------------------------------------------------------------------------------------------
+// STALL
+//------------------------------------------------------------------------------------------------------------------------------
+assign stall                 = (E_op ==  5'b00000) & is_DE_overlap;
+assign is_DE_overlap         = (is_D_rs1_E_rd_overlap | is_D_rs2_E_rd_overlap);
+assign is_D_rs1_E_rd_overlap = is_D_use_rs1 & (D_out[17:13] == E_rd) & E_rd != 0;
+assign is_D_rs2_E_rd_overlap = is_D_use_rs2 & (D_out[22:18] == E_rd) & E_rd != 0;
+
+assign is_D_use_rs1          = (D_out[4:0] == 5'b01101 || D_out[4:0] == 5'b00101 || D_out[4:0] == 5'b11011) ? 1'b0 : 1'b1;
+assign is_D_use_rs2          = (D_out[4:0] == 5'b01100 || D_out[4:0] == 5'b01000 || D_out[4:0] == 5'b11000) ? 1'b1 : 1'b0;
+assign is_M_use_rd = (M_op == 5'b01000 || M_op == 5'b11000) ? 1'b0 : 1'b1;
+assign is_W_use_rd = (W_op == 5'b01000 || W_op == 5'b11000) ? 1'b0 : 1'b1;
+
+//------------------------------------------------------------------------------------------------------------------------------
+// FETCH
+//------------------------------------------------------------------------------------------------------------------------------
+assign F_im_w_en = 4'd0;
+
+//------------------------------------------------------------------------------------------------------------------------------
+// DECODE
+//------------------------------------------------------------------------------------------------------------------------------
+assign D_rs1_data_sel        = is_D_rs1_W_rd_overlap ? 1'd1 : 1'd0;
+assign is_D_rs1_W_rd_overlap = is_D_use_rs1 & is_W_use_rd & (D_out[17:13] == W_rd) & W_rd != 0;
+
+assign D_rs2_data_sel        = is_D_rs2_W_rd_overlap ? 1'd1 : 1'd0;
+assign is_D_rs2_W_rd_overlap = is_D_use_rs2 & is_W_use_rd & (D_out[22:18] == W_rd) & W_rd != 0;
+
+//------------------------------------------------------------------------------------------------------------------------------
+// EXECUTE
+//------------------------------------------------------------------------------------------------------------------------------
+assign E_op_out = E_op;
+assign E_f3_out = E_f3;
+assign E_f7_out = E_f7;
+
+assign E_rs1_data_sel        = is_E_rs1_M_rd_overlap ? 2'd1 : is_E_rs1_W_rd_overlap ? 2'd0 : 2'd2;
+assign is_E_rs1_W_rd_overlap = is_E_use_rs1 & is_W_use_rd & (E_rs1 == W_rd) & W_rd != 0;
+assign is_E_rs1_M_rd_overlap = is_E_use_rs1 & is_M_use_rd & (E_rs1 == M_rd) & M_rd != 0;
+assign is_E_use_rs1          = (E_op == 5'b01101 || E_op == 5'b00101 || E_op == 5'b11011) ? 1'b0 : 1'b1;
+
+assign E_rs2_data_sel        = is_E_rs2_M_rd_overlap ? 2'd1 : is_E_rs2_W_rd_overlap ? 2'd0 : 2'd2;
+assign is_E_rs2_W_rd_overlap = is_E_use_rs2 & is_W_use_rd & (E_rs2 == W_rd) & W_rd != 0;
+assign is_E_rs2_M_rd_overlap = is_E_use_rs2 & is_M_use_rd & (E_rs2 == M_rd) & M_rd != 0;
+assign is_E_use_rs2          = (E_op == 5'b01100 || E_op == 5'b01000 || E_op == 5'b11000) ? 1'b1 : 1'b0;
 
 always @(*) begin
     case (E_op) 
@@ -178,7 +207,9 @@ always @(*) begin
         end
     endcase
 end
-
+//------------------------------------------------------------------------------------------------------------------------------
+// MEMORY
+//------------------------------------------------------------------------------------------------------------------------------
 always @(*) begin
     case (M_op) 
         5'b01000 : begin
@@ -191,6 +222,12 @@ always @(*) begin
         default : M_dm_w_en <= 4'd0;
     endcase
 end
+
+//------------------------------------------------------------------------------------------------------------------------------
+// WRITE_BACK
+//------------------------------------------------------------------------------------------------------------------------------
+assign W_rd_index = W_rd;
+assign W_f3_out   = W_f3;
 
 always @(*) begin
     case (W_op)

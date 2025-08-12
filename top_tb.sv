@@ -5,8 +5,8 @@
 
 `define CYCLE 10.0    // Cycle time
 `define MAX 100000    // Max cycle number
-`define prog_path "./test/prog0/main.hex"
-`define gold_path "./test/prog0/golden.hex"
+`define prog_path "./test/prog1/main.hex"
+`define gold_path "./test/prog1/golden.hex"
 
 `define mem_word(addr) \
   {top.dm.mem[addr+3], \
@@ -23,7 +23,7 @@ module top_tb;
   logic clk;
   logic rst;
 
-  logic [31:0] GOLDEN [64];
+  logic [31:0] GOLDEN [74];
   integer gf;               // pointer of golden file
   integer num;              // total golden data
   integer err;              // total number of errors compared to golden data

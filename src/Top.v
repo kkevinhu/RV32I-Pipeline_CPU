@@ -82,9 +82,16 @@ Controller controller(
     .W_wb_data_sel(W_wb_data_sel)
 );
 
-Reg_PC reg_pc(.clk(clk), .rst(rst), .branch(next_pc_sel), .stall(stall), .jb_pc(E_jb_out), .current_pc(current_pc));
+Reg_PC reg_pc(
+    .clk(clk), .rst(rst), 
+    .branch(next_pc_sel), .stall(stall), 
+    .jb_pc(E_jb_out), .current_pc(current_pc)
+);
 
-SRAM im(.clk(clk), .w_en(4'b0000), .address(current_pc[15:0]), .write_data(), .read_data(inst));
+SRAM im(
+    .clk(clk), .w_en(4'b0000), .address(current_pc[15:0]), 
+    .write_data(), .read_data(inst)
+);
 
 Reg_D reg_D(
     .clk(clk), .rst(rst), 
