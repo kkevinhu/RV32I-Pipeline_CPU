@@ -217,9 +217,9 @@ always @(*) begin
     case (M_op) 
         `STORE : begin
             case (M_f3)
-                `S_BYTE : M_dm_w_en <= 4'b0001; 
-                `S_HALF : M_dm_w_en <= 4'b0011;
-                `S_WORD : M_dm_w_en <= 4'b1111;
+                `BYTE : M_dm_w_en <= 4'b0001; 
+                `HALF : M_dm_w_en <= 4'b0011;
+                `WORD : M_dm_w_en <= 4'b1111;
             endcase
         end
         default : M_dm_w_en <= 4'd0;
