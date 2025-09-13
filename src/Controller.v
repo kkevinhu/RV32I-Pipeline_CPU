@@ -6,7 +6,7 @@ module Controller(
     input [23:0] D_out,
     input        b,
     output       stall,
-    output reg   next_pc_sel,
+    output       next_pc_sel,
     // Fetch
     output [3:0] F_im_w_en,
     // Decode
@@ -15,9 +15,9 @@ module Controller(
     // Execute
     output [1:0] E_rs1_data_sel,
     output [1:0] E_rs2_data_sel,
-    output reg   E_alu_op1_sel,
-    output reg   E_alu_op2_sel,
-    output reg   E_jb_op1_sel,
+    output       E_alu_op1_sel,
+    output       E_alu_op2_sel,
+    output       E_jb_op1_sel,
     output [4:0] E_op_out,
     output [2:0] E_f3_out,
     output       E_f7_out,
@@ -152,64 +152,11 @@ assign is_E_rs2_W_rd_overlap = is_E_use_rs2 & is_W_use_rd & (E_rs2 == W_rd) & W_
 assign is_E_rs2_M_rd_overlap = is_E_use_rs2 & is_M_use_rd & (E_rs2 == M_rd) & M_rd != 0;
 assign is_E_use_rs2          = (E_op == `R_TYPE || E_op == `STORE || E_op == `BRANCH) ? 1'b1 : 1'b0;
 
-always @(*) begin
-    case (E_op) 
-        `R_TYPE : begin 
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'b0;
-            E_alu_op2_sel <= 1'b0;
-        end
-        `IMME   : begin   
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'b0;
-            E_alu_op2_sel <= 1'b1;
-        end
-        `LOAD   : begin  
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'b0;
-            E_alu_op2_sel <= 1'b1;
-        end
-        `JALR   : begin 
-            next_pc_sel   <= 1'b0;
-            E_jb_op1_sel  <= 1'b0;
-            E_alu_op1_sel <= 1'b1;
-            E_alu_op2_sel <= 1'bx; 
-        end
-        `STORE  : begin  
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'b0;
-            E_alu_op2_sel <= 1'b1;
-        end
-        `BRANCH : begin 
-            next_pc_sel   <= !b;
-            E_jb_op1_sel  <= 1'b1;
-            E_alu_op1_sel <= 1'b0;
-            E_alu_op2_sel <= 1'b0;
-        end
-        `LUI    : begin 
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'bx;
-            E_alu_op2_sel <= 1'b1;
-        end
-        `AUIPC  : begin
-            next_pc_sel   <= 1'b1;
-            E_jb_op1_sel  <= 1'bx;
-            E_alu_op1_sel <= 1'b1;
-            E_alu_op2_sel <= 1'b1;
-        end
-        `JAL    : begin 
-            next_pc_sel   <= 1'b0;
-            E_jb_op1_sel  <= 1'b1;
-            E_alu_op1_sel <= 1'b1;
-            E_alu_op2_sel <= 1'bx; 
-        end
-    endcase
-end
+assign next_pc_sel   = (E_op == `BRANCH) ? !b : (E_op == `JALR || E_op == `JAL) ? 1'b0 : 1'b1;
+assign E_jb_op1_sel  = (E_op == `BRANCH || E_op == `JAL) ? 1'b1 : 1'b0;
+assign E_alu_op1_sel = (E_op == `JALR || E_op == `JAL || E_op == `AUIPC) ? 1'b1 : 1'b0;
+assign E_alu_op2_sel = (E_op == `R_TYPE || E_op == `JALR || E_op == `BRANCH || E_op == `JAL) ? 1'b0 : 1'b1;
+
 //------------------------------------------------------------------------------------------------------------------------------
 // MEMORY
 //------------------------------------------------------------------------------------------------------------------------------
@@ -252,11 +199,11 @@ always @(*) begin
         end
         `STORE  : begin 
             W_wb_en <= 1'b0;
-            W_wb_data_sel <= 1'bx;
+            W_wb_data_sel <= 1'b0;
         end
         `BRANCH : begin 
             W_wb_en <= 1'b0;
-            W_wb_data_sel <= 1'bx;
+            W_wb_data_sel <= 1'b0;
         end
         `LUI    : begin 
             W_wb_en <= 1'b1;

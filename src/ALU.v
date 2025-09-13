@@ -47,12 +47,3 @@ always @(*) begin
     endcase
 end
 endmodule
-
-/* opcode
-R : 01100
-I : 00100 00000 11001
-S : 01000 
-B : 11000
-U : 01101 00101
-J : 11011
-*/

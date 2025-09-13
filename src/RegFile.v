@@ -11,13 +11,13 @@ module RegFile (
 
 reg [31:0] registers [0:31];
 
-// read register
+// Read register
 always @(*) begin
     rs1_data_out <= registers[rs1_index]; 
     rs2_data_out <= registers[rs2_index]; 
 end
 
-// write back to register
+// Write back to register
 always @(posedge clk) begin
     if (wb_en && rd_index != 5'd0) 
         registers[rd_index] <= wb_data;
