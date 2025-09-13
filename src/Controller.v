@@ -24,10 +24,10 @@ module Controller(
     // Memory
     output reg [3:0] M_dm_w_en,
     // Write back
-    output reg   W_wb_en,
+    output       W_wb_en,
     output [4:0] W_rd_index,
     output [2:0] W_f3_out,
-    output reg   W_wb_data_sel
+    output       W_wb_data_sel
 );
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -179,44 +179,7 @@ end
 assign W_rd_index = W_rd;
 assign W_f3_out   = W_f3;
 
-always @(*) begin
-    case (W_op)
-        `R_TYPE : begin 
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-        `IMME   : begin  
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-        `LOAD   : begin 
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b1;
-        end
-        `JALR   : begin 
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-        `STORE  : begin 
-            W_wb_en <= 1'b0;
-            W_wb_data_sel <= 1'b0;
-        end
-        `BRANCH : begin 
-            W_wb_en <= 1'b0;
-            W_wb_data_sel <= 1'b0;
-        end
-        `LUI    : begin 
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-        `AUIPC  : begin 
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-        `JAL    : begin
-            W_wb_en <= 1'b1;
-            W_wb_data_sel <= 1'b0;
-        end
-    endcase
-end
+assign W_wb_en = (W_op == `STORE || W_op == `BRANCH) ? 1'b0 : 1'b1;
+assign W_wb_data_sel = (W_op == `LOAD) ? 1'b1 : 1'b0;
+
 endmodule
